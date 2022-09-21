@@ -1,0 +1,36 @@
+{
+  "name": "migrator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r @swc-node/register src/index.ts",
+    "play": "node -r @swc-node/register src/playground.ts",
+    "test": "vitest",
+    "gen": "openapi-codegen gen xata"
+  },
+  "keywords": [
+    "xata",
+    "airtable",
+    "migration"
+  ],
+  "author": "Fabien Bernard",
+  "license": "MIT",
+  "dependencies": {
+    "case": "1.6.3",
+    "dotenv": "16.0.2",
+    "lodash.omit": "^4.5.0",
+    "rxjs": "7.5.6",
+    "undici": "5.10.0",
+    "zod": "3.19.1"
+  },
+  "devDependencies": {
+    "@openapi-codegen/cli": "^1.6.0",
+    "@openapi-codegen/typescript": "^5.2.1",
+    "@swc-node/register": "1.5.1",
+    "@types/lodash.omit": "^4.5.7",
+    "@types/node": "18.7.16",
+    "typescript": "4.8.3",
+    "vitest": "0.23.2"
+  }
+}
