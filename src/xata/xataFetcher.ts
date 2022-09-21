@@ -1,5 +1,4 @@
 import undici from "undici";
-import fs from "fs";
 
 export type XataFetcherExtraProps = {
   apiKey: string;
@@ -58,17 +57,13 @@ export async function xataFetch<
         },
       }
     );
-    console.log("request-id", response.headers.get("x-request-id"));
-    console.log("content-type", response.headers.get("content-type"));
-
-    fs.writeFileSync("debug.txt", await response.text());
 
     if (!response.ok) {
       let error: ErrorWrapper<TError>;
       try {
         error = {
           status: response.status,
-          payload: await response.blob(),
+          payload: await response.json(),
         } as any;
       } catch (e) {
         error = {
