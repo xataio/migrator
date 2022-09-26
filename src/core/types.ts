@@ -4,7 +4,7 @@ import { Column as XataColumn } from "../xata/xataSchemas";
 export type Migration = {
   // Source of the migration
   source: {
-    service: "airTable";
+    service: "airtable";
     apiKey: string;
     baseId: string;
   };

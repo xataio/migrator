@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { lastValueFrom, map } from "rxjs";
+import task, { TaskAPI } from "tasuku";
 
 import {
   bulkInsertTableRecords,
@@ -23,153 +24,193 @@ export async function migrate(migration: Migration) {
   // Shared variables across steps
   const newTables = getXataNewTables(migration);
   const bulkOperations = new Map<string, Record<string, unknown>[]>();
+  const subTasks: TaskAPI[] = [];
 
-  if (!migration.skipCreateTargetDatabase) {
-    console.log(
-      `- Creating ${migration.target.databaseName} database (Nice choice for ${migration.target.databaseColor} 👌)`
-    );
+  await task(
+    "Migrating date from Airtable to Xata",
+    async ({ setTitle, task }) => {
+      if (!migration.skipCreateTargetDatabase) {
+        subTasks.push(
+          await task(
+            `Create "${migration.target.databaseName}" database`,
+            async ({ task }) => {
+              const createDbTask = await task("Create database", async () => {
+                await createDatabase({
+                  apiKey: migration.target.apiKey,
+                  workspaceId: migration.target.workspaceId,
+                  pathParams: {
+                    dbName: migration.target.databaseName,
+                  },
+                  body: {
+                    ui: {
+                      color: `xata-${migration.target.databaseColor}`,
+                    },
+                  },
+                });
+              });
 
-    // Create database
-    await createDatabase({
-      apiKey: migration.target.apiKey,
-      workspaceId: migration.target.workspaceId,
-      pathParams: {
-        dbName: migration.target.databaseName,
-      },
-      body: {
-        ui: {
-          color: `xata-${migration.target.databaseColor}`,
-        },
-      },
-    });
+              const execMigrationTask = await task(
+                "Execute migration plan",
+                async () => {
+                  await executeBranchMigrationPlan({
+                    apiKey: migration.target.apiKey,
+                    workspaceId: migration.target.workspaceId,
+                    body: {
+                      version: 0,
+                      migration: {
+                        localChanges: true,
+                        status: "started",
+                        newTables,
+                        newTableOrder: Object.keys(newTables),
+                      },
+                    },
+                    pathParams: {
+                      dbBranchName: `${migration.target.databaseName}:main`,
+                    },
+                  });
+                }
+              );
 
-    // Create all required tables
-    await executeBranchMigrationPlan({
-      apiKey: migration.target.apiKey,
-      workspaceId: migration.target.workspaceId,
-      body: {
-        version: 0,
-        migration: {
-          localChanges: true,
-          status: "started",
-          newTables,
-          newTableOrder: Object.keys(newTables),
-        },
-      },
-      pathParams: {
-        dbBranchName: `${migration.target.databaseName}:main`,
-      },
-    });
-  }
+              // Collapse nested tasks on success
+              createDbTask.clear();
+              execMigrationTask.clear();
+            }
+          )
+        );
+      }
 
-  if (!migration.skipMigrateRecords) {
-    // Insert all the records
-    await lastValueFrom(
-      insertRecords$({
-        migration,
-        getTableSourceRecords$(table) {
-          return getAllAirtableRecords$({
-            baseId: migration.source.baseId,
-            apiKey: migration.source.apiKey,
-            tableId: table.sourceTableId,
-          }).pipe(map((r) => ({ ...r, table })));
-        },
-        async upsertRecord(payload) {
-          // Collect records for sending them later as bulk operation
-          const previousOperations =
-            bulkOperations.get(payload.tableName) || [];
+      if (!migration.skipMigrateRecords) {
+        subTasks.push(
+          await task("Migrate records", async ({ task }) => {
+            const getRecordsTask = await task(
+              "Retrieve & validate all records from Airtable",
+              async () => {
+                await lastValueFrom(
+                  insertRecords$({
+                    migration,
+                    getTableSourceRecords$(table) {
+                      return getAllAirtableRecords$({
+                        baseId: migration.source.baseId,
+                        apiKey: migration.source.apiKey,
+                        tableId: table.sourceTableId,
+                      }).pipe(map((r) => ({ ...r, table })));
+                    },
+                    async upsertRecord(payload) {
+                      // Collect records for sending them later as bulk operation
+                      const previousOperations =
+                        bulkOperations.get(payload.tableName) || [];
 
-          bulkOperations.set(payload.tableName, [
-            ...previousOperations,
-            { id: payload.id, ...payload.fields },
-          ]);
+                      bulkOperations.set(payload.tableName, [
+                        ...previousOperations,
+                        { id: payload.id, ...payload.fields },
+                      ]);
 
-          return payload;
-        },
-      })
-    );
+                      return payload;
+                    },
+                  })
+                );
+              }
+            );
 
-    await Promise.all(
-      Array.from(bulkOperations.entries()).map(([tableName, records]) => {
-        console.log(`- Inserting records into ${tableName}`);
-        return bulkInsertTableRecords({
-          apiKey: migration.target.apiKey,
-          workspaceId: migration.target.workspaceId,
-          pathParams: {
-            dbBranchName: migration.target.databaseName + ":main",
-            tableName,
-          },
-          body: {
-            records,
-          },
-        });
-      })
-    );
-  }
+            const insertRecordTask = await task.group((task) =>
+              Array.from(bulkOperations.entries()).map(
+                ([tableName, records]) => {
+                  return task(`Insert records into ${tableName}`, () =>
+                    bulkInsertTableRecords({
+                      apiKey: migration.target.apiKey,
+                      workspaceId: migration.target.workspaceId,
+                      pathParams: {
+                        dbBranchName: migration.target.databaseName + ":main",
+                        tableName,
+                      },
+                      body: {
+                        records,
+                      },
+                    })
+                  );
+                }
+              )
+            );
 
-  if (!migration.skipResolveLinks) {
-    console.log("- Resolving links between tables");
-    // Resolved link
-    await lastValueFrom(
-      resolveLinks({
-        xataSchema: {
-          tables: Object.values(newTables),
-        },
-        getTableTargetRecords$(tableName) {
-          return getAllXataRecords$({
-            workspaceId: migration.target.workspaceId,
+            // Collapse nested tasks on success
+            getRecordsTask.clear();
+            insertRecordTask.clear();
+          })
+        );
+      }
+
+      if (!migration.skipResolveLinks) {
+        subTasks.push(
+          await task("Resolve links between tables", async () => {
+            await lastValueFrom(
+              resolveLinks({
+                xataSchema: {
+                  tables: Object.values(newTables),
+                },
+                getTableTargetRecords$(tableName) {
+                  return getAllXataRecords$({
+                    workspaceId: migration.target.workspaceId,
+                    apiKey: migration.target.apiKey,
+                    branch: "main",
+                    databaseName: migration.target.databaseName,
+                    tableName,
+                  }).pipe(map(({ id, ...fields }) => ({ id, fields })));
+                },
+                updateRecord(payload) {
+                  return updateRecordWithID({
+                    apiKey: migration.target.apiKey,
+                    workspaceId: migration.target.workspaceId,
+                    pathParams: {
+                      dbBranchName: migration.target.databaseName + ":main",
+                      recordId: payload.id,
+                      tableName: payload.tableName,
+                    },
+                    body: payload.fields,
+                  });
+                },
+              })
+            );
+          })
+        );
+      }
+
+      // Check & cleanup
+      subTasks.push(
+        await task("Check migration and cleanup", async () => {
+          // - all links must be resolved
+          // - remove all `_error` empty table - done
+          // - report if something is wrong
+          const emptyErrorTables = Object.keys(newTables).filter(
+            (tableName) =>
+              tableName.endsWith("_error") && !bulkOperations.has(tableName)
+          );
+
+          await executeBranchMigrationPlan({
             apiKey: migration.target.apiKey,
-            branch: "main",
-            databaseName: migration.target.databaseName,
-            tableName,
-          }).pipe(map(({ id, ...fields }) => ({ id, fields })));
-        },
-        updateRecord(payload) {
-          return updateRecordWithID({
-            apiKey: migration.target.apiKey,
             workspaceId: migration.target.workspaceId,
-            pathParams: {
-              dbBranchName: migration.target.databaseName + ":main",
-              recordId: payload.id,
-              tableName: payload.tableName,
+            body: {
+              version: 1,
+              migration: {
+                localChanges: true,
+                status: "started",
+                newTableOrder: Object.keys(newTables).filter(
+                  (i) => !emptyErrorTables.includes(i)
+                ),
+                removedTables: emptyErrorTables,
+              },
             },
-            body: payload.fields,
+            pathParams: {
+              dbBranchName: `${migration.target.databaseName}:main`,
+            },
           });
-        },
-      })
-    );
-  }
+        })
+      );
 
-  // Check & cleanup
-  const emptyErrorTables = Object.keys(newTables).filter(
-    (tableName) =>
-      tableName.endsWith("_error") && !bulkOperations.has(tableName)
-  );
+      subTasks.forEach((t) => t.clear());
 
-  await executeBranchMigrationPlan({
-    apiKey: migration.target.apiKey,
-    workspaceId: migration.target.workspaceId,
-    body: {
-      version: 1,
-      migration: {
-        localChanges: true,
-        status: "started",
-        newTableOrder: Object.keys(newTables).filter(
-          (i) => !emptyErrorTables.includes(i)
-        ),
-        removedTables: emptyErrorTables,
-      },
-    },
-    pathParams: {
-      dbBranchName: `${migration.target.databaseName}:main`,
-    },
-  });
-
-  // - all links must be resolved
-  // - remove all `_error` empty table - done
-  // - report if something is wrong
-
-  console.log(
-    `Your xatabase is ready! https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}`
+      setTitle(
+        `Your xatabase is ready! https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}`
+      );
+    }
   );
 }
