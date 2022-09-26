@@ -45,6 +45,14 @@ for (const table of tables) {
 
     if (type.includes("Lookup")) {
       continue;
+    } else if (type.includes("Rollup")) {
+      var exampleValue = column
+        .querySelector(
+          '[ng-repeat="row in table.sampleRows | hasValueFor:column | limitTo:5"'
+        )
+        .textContent.trim();
+      c.sourceColumnType = mapToAirtableType(type);
+      c.targetColumnType = exampleValue.startsWith('"') ? "string" : "float";
     } else if (type.includes("Link")) {
       c.sourceColumnType = mapToAirtableType(type);
       c.linkSourceTableName = column.querySelector(".tableName").textContent;
@@ -82,7 +90,7 @@ console.log(
   ""
 );
 console.log(
-  "🦋 Go back to Xata and %cpaste it%c to start the import.",
+  "🦋 Go back to your xata/migrator project and %cpaste it%c into index.ts.",
   "font-weight: bold",
   ""
 );
