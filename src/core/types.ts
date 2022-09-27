@@ -5,14 +5,20 @@ export type Migration = {
   // Source of the migration
   source: {
     service: "airtable";
-    apiKey: string;
+    /**
+     * @default process.env.AIRTABLE_API_KEY
+     */
+    apiKey?: string;
     baseId: string;
   };
 
   // Target of the migration
   target: {
     service: "xata";
-    apiKey: string;
+    /**
+     * @default process.env.XATA_API_KEY
+     */
+    apiKey?: string;
     workspaceId: string;
     databaseName: string;
     databaseColor:

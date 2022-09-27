@@ -24,8 +24,33 @@ dotenv.config();
 const logFile = createWriteStream(join(__dirname, "../../debug.txt"));
 
 export async function migrate(migration: Migration) {
-  // TODO: validate `migration` and give nice error message
-  // no apiKey / baseId / workspaceId
+  const sourceAPIKey = migration.source.apiKey ?? process.env.AIRTABLE_API_KEY;
+
+  const targetAPIKey = migration.target.apiKey ?? process.env.XATA_API_KEY;
+
+  if (!sourceAPIKey) {
+    throw new Error(
+      `${migration.source.service}'s apiKey is missing, please check https://support.airtable.com/docs/how-do-i-get-my-api-key`
+    );
+  }
+
+  if (!migration.source.baseId) {
+    throw new Error(
+      `${migration.source.service}'s baseId is missing, you can find it in the base documentation https://airtable.com/api`
+    );
+  }
+
+  if (!migration.target.workspaceId) {
+    throw new Error(
+      `${migration.target.service}'s workspaceId is missing, you can learn how to create a workspace https://xata.io/docs/concepts/workspaces`
+    );
+  }
+
+  if (!targetAPIKey) {
+    throw new Error(
+      `${migration.target.service}'s apiKey is missing, please check https://xata.io/docs/concepts/api-keys`
+    );
+  }
 
   // Shared variables across steps
   const newTables = getXataNewTables(migration);
@@ -43,7 +68,7 @@ export async function migrate(migration: Migration) {
             async ({ task }) => {
               const createDbTask = await task("Create database", async () => {
                 await createDatabase({
-                  apiKey: migration.target.apiKey,
+                  apiKey: targetAPIKey,
                   workspaceId: migration.target.workspaceId,
                   pathParams: {
                     dbName: migration.target.databaseName,
@@ -60,7 +85,7 @@ export async function migrate(migration: Migration) {
                 "Execute migration plan",
                 async () => {
                   await executeBranchMigrationPlan({
-                    apiKey: migration.target.apiKey,
+                    apiKey: targetAPIKey,
                     workspaceId: migration.target.workspaceId,
                     body: {
                       version: 0,
@@ -99,7 +124,7 @@ export async function migrate(migration: Migration) {
                     getTableSourceRecords$(table) {
                       return getAllAirtableRecords$({
                         baseId: migration.source.baseId,
-                        apiKey: migration.source.apiKey,
+                        apiKey: sourceAPIKey,
                         tableId: table.sourceTableId,
                       }).pipe(map((r) => ({ ...r, table })));
                     },
@@ -125,7 +150,7 @@ export async function migrate(migration: Migration) {
                 ([tableName, records]) => {
                   return task(`Insert records into ${tableName}`, () =>
                     bulkInsertTableRecords({
-                      apiKey: migration.target.apiKey,
+                      apiKey: targetAPIKey,
                       workspaceId: migration.target.workspaceId,
                       pathParams: {
                         dbBranchName: migration.target.databaseName + ":main",
@@ -159,7 +184,7 @@ export async function migrate(migration: Migration) {
                 getTableTargetRecords$(tableName) {
                   return getAllXataRecords$({
                     workspaceId: migration.target.workspaceId,
-                    apiKey: migration.target.apiKey,
+                    apiKey: targetAPIKey,
                     branch: "main",
                     databaseName: migration.target.databaseName,
                     tableName,
@@ -167,7 +192,7 @@ export async function migrate(migration: Migration) {
                 },
                 updateRecord(payload) {
                   return updateRecordWithID({
-                    apiKey: migration.target.apiKey,
+                    apiKey: targetAPIKey,
                     workspaceId: migration.target.workspaceId,
                     pathParams: {
                       dbBranchName: migration.target.databaseName + ":main",
@@ -199,7 +224,7 @@ export async function migrate(migration: Migration) {
                 let result = false;
                 for (const column of linkColumns) {
                   const { records } = await queryTable({
-                    apiKey: migration.target.apiKey,
+                    apiKey: targetAPIKey,
                     workspaceId: migration.target.workspaceId,
                     pathParams: {
                       dbBranchName: `${migration.target.databaseName}:main`,
@@ -227,7 +252,7 @@ export async function migrate(migration: Migration) {
             });
 
             await executeBranchMigrationPlan({
-              apiKey: migration.target.apiKey,
+              apiKey: targetAPIKey,
               workspaceId: migration.target.workspaceId,
               body: {
                 version: 1,
