@@ -61,6 +61,12 @@ export async function xataFetch<
 
     if (!response.ok) {
       let error: ErrorWrapper<TError>;
+      if (response.status === 429) {
+        throw {
+          status: 429,
+          payload: "Rate limit exceeded!",
+        };
+      }
       try {
         error = {
           status: response.status,
