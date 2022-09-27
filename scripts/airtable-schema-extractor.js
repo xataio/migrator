@@ -1,12 +1,10 @@
-// TODO guess rollup type with example
 var data = {
   source: {
-    service: "airTable",
+    service: "airtable",
   },
   target: {
     service: "xata",
     workspaceId: "-- todo --",
-    apiKey: "-- todo --",
     databaseName: "-- todo --",
     databaseColor: "green",
   },
@@ -45,7 +43,7 @@ for (const table of tables) {
 
     if (type.includes("Lookup")) {
       continue;
-    } else if (type.includes("Rollup")) {
+    } else if (type.includes("Rollup") || type.includes("Formula")) {
       var exampleValue = column
         .querySelector(
           '[ng-repeat="row in table.sampleRows | hasValueFor:column | limitTo:5"'
