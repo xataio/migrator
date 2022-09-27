@@ -52,6 +52,7 @@ export async function xataFetch<
         body: body ? JSON.stringify(body) : undefined,
         headers: {
           "Content-Type": "application/json",
+          "accept-encoding": "", // skip gzip
           Authorization: `Bearer ${apiKey}`,
           ...headers,
         },

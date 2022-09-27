@@ -4,6 +4,10 @@ import { Column as XataColumn, Table } from "../xata/xataSchemas";
 import { Migration } from "./types";
 
 type XataTableName = string;
+export type XataTables = Record<
+  XataTableName,
+  { name: string; columns: XataColumn[] }
+>;
 
 export const getXataNewTables = (migration: Migration) => {
   const tableNameFormatter = migration.tableNameFormatter ?? camel;
@@ -12,8 +16,7 @@ export const getXataNewTables = (migration: Migration) => {
     migration.getTableErrorName ??
     ((tableName: string) => tableName + "_error");
 
-  const tables: Record<XataTableName, { name: string; columns: XataColumn[] }> =
-    {};
+  const tables: XataTables = {};
   migration.tables.forEach((table) => {
     const tableName =
       table.targetTableName ?? tableNameFormatter(table.sourceTableName);

@@ -6,6 +6,7 @@ import {
   bulkInsertTableRecords,
   createDatabase,
   executeBranchMigrationPlan,
+  queryTable,
   updateRecordWithID,
 } from "../xata/xataComponents";
 import { getXataNewTables } from "./getXataNewTables";
@@ -14,8 +15,13 @@ import { insertRecords$ } from "./insertRecords";
 import { getAllAirtableRecords$ } from "../adaptors/airtable";
 import { resolveLinks } from "./resolveLinks";
 import { getAllXataRecords$ } from "../adaptors/xata";
+import { verifyLinksMigration } from "./verifyLinksMigration";
+import { createWriteStream } from "fs";
+import { join } from "path";
 
 dotenv.config();
+
+const logFile = createWriteStream(join(__dirname, "../../debug.txt"));
 
 export async function migrate(migration: Migration) {
   // TODO: validate `migration` and give nice error message
@@ -29,6 +35,7 @@ export async function migrate(migration: Migration) {
   await task(
     "Migrating date from Airtable to Xata",
     async ({ setTitle, task }) => {
+      // Create the database and its schema
       if (!migration.skipCreateTargetDatabase) {
         subTasks.push(
           await task(
@@ -79,6 +86,7 @@ export async function migrate(migration: Migration) {
         );
       }
 
+      // Migrate all records (with unresolved links)
       if (!migration.skipMigrateRecords) {
         subTasks.push(
           await task("Migrate records", async ({ task }) => {
@@ -139,6 +147,7 @@ export async function migrate(migration: Migration) {
         );
       }
 
+      // Resolve all the links
       if (!migration.skipResolveLinks) {
         subTasks.push(
           await task("Resolve links between tables", async () => {
@@ -175,36 +184,70 @@ export async function migrate(migration: Migration) {
       }
 
       // Check & cleanup
-      subTasks.push(
-        await task("Check migration and cleanup", async () => {
-          // - all links must be resolved
-          // - remove all `_error` empty table - done
-          // - report if something is wrong
-          const emptyErrorTables = Object.keys(newTables).filter(
-            (tableName) =>
-              tableName.endsWith("_error") && !bulkOperations.has(tableName)
-          );
+      if (!migration.skipCheckAndClean) {
+        subTasks.push(
+          await task("Check migration and cleanup", async () => {
+            // TODO: logs non empty table in the log file
+            const emptyErrorTables = Object.keys(newTables).filter(
+              (tableName) =>
+                tableName.endsWith("_error") && !bulkOperations.has(tableName)
+            );
 
-          await executeBranchMigrationPlan({
-            apiKey: migration.target.apiKey,
-            workspaceId: migration.target.workspaceId,
-            body: {
-              version: 1,
-              migration: {
-                localChanges: true,
-                status: "started",
-                newTableOrder: Object.keys(newTables).filter(
-                  (i) => !emptyErrorTables.includes(i)
-                ),
-                removedTables: emptyErrorTables,
+            const links = await verifyLinksMigration({
+              tables: newTables,
+              async hasUnresolvedLinks(tableName, linkColumns) {
+                let result = false;
+                for (const column of linkColumns) {
+                  const { records } = await queryTable({
+                    apiKey: migration.target.apiKey,
+                    workspaceId: migration.target.workspaceId,
+                    pathParams: {
+                      dbBranchName: `${migration.target.databaseName}:main`,
+                      tableName,
+                    },
+                    body: {
+                      filter: {
+                        $existsNot: `${column}.id`,
+                        $exists: `${column}_unresolved`,
+                      },
+                    },
+                  });
+
+                  if (records.length > 0) {
+                    result = true;
+                  }
+                }
+                return result;
               },
-            },
-            pathParams: {
-              dbBranchName: `${migration.target.databaseName}:main`,
-            },
-          });
-        })
-      );
+            });
+
+            links.errorTables.forEach((t) => {
+              // TODO: add link to UI
+              logFile.write(`${t} has some unresolved links \n`);
+            });
+
+            await executeBranchMigrationPlan({
+              apiKey: migration.target.apiKey,
+              workspaceId: migration.target.workspaceId,
+              body: {
+                version: 1,
+                migration: {
+                  localChanges: true,
+                  status: "started",
+                  newTableOrder: Object.keys(newTables).filter(
+                    (i) => !emptyErrorTables.includes(i)
+                  ),
+                  removedTables: emptyErrorTables,
+                  tableMigrations: links.migration,
+                },
+              },
+              pathParams: {
+                dbBranchName: `${migration.target.databaseName}:main`,
+              },
+            });
+          })
+        );
+      }
 
       subTasks.forEach((t) => t.clear());
 

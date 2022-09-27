@@ -7,7 +7,7 @@ describe("getXataNewTables", () => {
   it("should create a simple table", () => {
     const migration: Migration = {
       source: {
-        service: "airTable",
+        service: "airtable",
         apiKey: "",
         baseId: "",
       },
@@ -61,7 +61,7 @@ describe("getXataNewTables", () => {
   it("should deal with links (multiple = false)", () => {
     const migration: Migration = {
       source: {
-        service: "airTable",
+        service: "airtable",
         apiKey: "",
         baseId: "",
       },
@@ -154,7 +154,7 @@ describe("getXataNewTables", () => {
   it("should deal with links (multiple = true)", () => {
     const migration: Migration = {
       source: {
-        service: "airTable",
+        service: "airtable",
         apiKey: "",
         baseId: "",
       },
@@ -247,7 +247,7 @@ describe("getXataNewTables", () => {
   it("should deal with attachments", () => {
     const migration: Migration = {
       source: {
-        service: "airTable",
+        service: "airtable",
         apiKey: "",
         baseId: "",
       },

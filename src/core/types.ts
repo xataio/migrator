@@ -47,19 +47,24 @@ export type Migration = {
   tableNameFormatter?: (tableName: string) => string;
 
   /**
-   * Skip the database creation and its schema (step 1)
+   * Skip the database creation and its schema task (step 1)
    */
   skipCreateTargetDatabase?: boolean;
 
   /**
-   * Skip injecting the records (step 2)
+   * Skip injecting the records task (step 2)
    */
   skipMigrateRecords?: boolean;
 
   /**
-   * Skip resolve links (step 3)
+   * Skip resolve links task (step 3)
    */
   skipResolveLinks?: boolean;
+
+  /**
+   * Skip check & clean task (step 4)
+   */
+  skipCheckAndClean?: boolean;
 
   /**
    * Tables schema definition.
