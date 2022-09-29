@@ -16,10 +16,9 @@ data.source.apiKey = document
   .getAttribute("data-api-key");
 data.source.baseId = window.location.pathname.split("/")[1];
 
-data.target.databaseName = document
-  .querySelector(".applicationName")
-  .textContent.toLowerCase()
-  .replace(/ /, "-");
+data.target.databaseName = camelize(
+  document.querySelector(".applicationName").textContent
+);
 
 var tables = document.querySelectorAll(
   '.content [ng-repeat="table in application.tables"]'
@@ -36,28 +35,33 @@ for (const table of tables) {
   var columns = table.querySelectorAll('[ng-repeat="column in table.columns"]');
 
   for (const column of columns) {
-    var c = {};
-    c.sourceColumnName = column.querySelector(".columnName").textContent;
     var id = column.querySelector(".columnId").textContent;
     var type = column.querySelector(".type").textContent.trim();
+    var description = column.querySelector(".description").textContent.trim();
+
+    var c = {
+      sourceColumnName: column.querySelector(".columnName").textContent,
+      sourceColumnType: mapToAirtableType(type),
+    };
 
     if (type.includes("Lookup")) {
       continue;
+    } else if (type === "Number") {
+      c.targetColumnType = description.includes("integer") ? "int" : "float";
+    } else if (description.includes("Computed value: LAST_MODIFIED_TIME().")) {
+      c.sourceColumnType = "dateTime";
     } else if (type.includes("Rollup") || type.includes("Formula")) {
       var exampleValue = column
         .querySelector(
           '[ng-repeat="row in table.sampleRows | hasValueFor:column | limitTo:5"'
         )
         .textContent.trim();
-      c.sourceColumnType = mapToAirtableType(type);
       c.targetColumnType = exampleValue.startsWith('"') ? "string" : "float";
     } else if (type.includes("Link")) {
-      c.sourceColumnType = mapToAirtableType(type);
       c.linkSourceTableName = column.querySelector(".tableName").textContent;
       c.allowMultipleRecords = true;
-    } else {
-      c.sourceColumnType = mapToAirtableType(type);
     }
+
     t.columns.push(c);
   }
 }
@@ -75,7 +79,11 @@ function mapToAirtableType(type) {
   if (type === "Attachment") return "multipleAttachments";
   if (type === "Link to another record") return "multipleRecordLinks";
   if (type === "Multiple select") return "multipleSelects";
+  if (type === "Multiple collaborator") return "multipleCollaborators";
   if (type === "URL") return "url";
+  if (type === "Collaborator") return "singleCollaborator";
+  if (type.endsWith("time")) return "dateTime";
+  if (type.endsWith("by")) return "singleCollaborator";
 
   return camelize(type);
 }

@@ -6,7 +6,7 @@ import { Migration } from "./types";
 const source: Migration["source"] = {
   apiKey: "",
   baseId: "",
-  service: "airTable",
+  service: "airtable",
 };
 
 const target: Migration["target"] = {
@@ -650,6 +650,171 @@ describe("insertRecords", () => {
       id: "1-success",
       fields: {
         name: "fabien",
+      },
+    });
+  });
+
+  it("should deal with single collaborator", async () => {
+    const tables: Migration["tables"] = [
+      {
+        sourceTableName: "todo",
+        sourceTableId: "todo",
+        columns: [
+          { sourceColumnName: "description", sourceColumnType: "text" },
+          {
+            sourceColumnName: "assignee",
+            sourceColumnType: "singleCollaborator",
+          },
+        ],
+      },
+    ];
+
+    const upsertRecord = vi.fn(async () => {});
+
+    const getTableSourceRecords$ = () =>
+      new Observable<SourceRecord>((s) => {
+        s.next({
+          table: tables[0],
+          id: "1-success",
+          fields: {
+            description: "Finish Airtable migrator",
+            assignee: {
+              id: "fafa",
+              name: "Fabien Bernard",
+              email: "fabien0102@xata.io",
+            },
+          },
+        });
+
+        return s.complete();
+      });
+
+    await lastValueFrom(
+      insertRecords$({
+        migration: {
+          tables,
+          source,
+          target,
+        },
+        getTableSourceRecords$,
+        upsertRecord,
+      })
+    );
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "todo",
+      id: "1-success",
+      fields: {
+        description: "Finish Airtable migrator",
+        assignee_unresolved: "fafa",
+      },
+    });
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "collaborators",
+      id: "fafa",
+      fields: {
+        name: "Fabien Bernard",
+        email: "fabien0102@xata.io",
+      },
+    });
+  });
+
+  it("should deal with multiple collaborators", async () => {
+    const tables: Migration["tables"] = [
+      {
+        sourceTableName: "todo",
+        sourceTableId: "todo",
+        columns: [
+          { sourceColumnName: "description", sourceColumnType: "text" },
+          {
+            sourceColumnName: "assignees",
+            sourceColumnType: "multipleCollaborators",
+          },
+        ],
+      },
+    ];
+
+    const upsertRecord = vi.fn(async () => {});
+
+    const getTableSourceRecords$ = () =>
+      new Observable<SourceRecord>((s) => {
+        s.next({
+          table: tables[0],
+          id: "1-success",
+          fields: {
+            description: "Finish Airtable migrator",
+            assignees: [
+              {
+                id: "fafa",
+                name: "Fabien Bernard",
+                email: "fabien0102@xata.io",
+              },
+              {
+                id: "tejas",
+                name: "Tejas Kumar",
+                email: "tejas@xata.io",
+              },
+            ],
+          },
+        });
+
+        return s.complete();
+      });
+
+    await lastValueFrom(
+      insertRecords$({
+        migration: {
+          tables,
+          source,
+          target,
+        },
+        getTableSourceRecords$,
+        upsertRecord,
+      })
+    );
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "todo",
+      id: "1-success",
+      fields: {
+        description: "Finish Airtable migrator",
+      },
+    });
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "todo_assignees",
+      id: "1-success_fafa",
+      fields: {
+        collaborators_unresolved: "fafa",
+        todo_unresolved: "1-success",
+      },
+    });
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "todo_assignees",
+      id: "1-success_tejas",
+      fields: {
+        collaborators_unresolved: "tejas",
+        todo_unresolved: "1-success",
+      },
+    });
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "collaborators",
+      id: "fafa",
+      fields: {
+        name: "Fabien Bernard",
+        email: "fabien0102@xata.io",
+      },
+    });
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "collaborators",
+      id: "tejas",
+      fields: {
+        name: "Tejas Kumar",
+        email: "tejas@xata.io",
       },
     });
   });

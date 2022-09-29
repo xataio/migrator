@@ -25,7 +25,7 @@ export const getXataNewTables = (migration: Migration) => {
     tables[tableName] = {
       name: tableName,
       columns: table.columns.reduce((mem, column) => {
-        const columnName =
+        const columnName: string =
           column.targetColumnName ??
           columnNameFormatter(column.sourceColumnName);
 
@@ -105,6 +105,87 @@ export const getXataNewTables = (migration: Migration) => {
           return mem;
         }
 
+        // Multiple collaborators
+        if (column.sourceColumnType === "multipleCollaborators") {
+          tables.collaborators = collaboratorsTable;
+
+          tables[`${tableName}_${columnName}`] = {
+            name: `${tableName}_${columnName}`,
+            columns: [
+              { name: tableName, type: "link", link: { table: tableName } },
+              { name: tableName + "_unresolved", type: "string" },
+              {
+                name: "collaborators",
+                type: "link",
+                link: { table: "collaborators" },
+              },
+              {
+                name: "collaborators_unresolved",
+                type: "string",
+              },
+            ],
+          };
+          return mem;
+        }
+
+        // Single collaborator
+        if (column.sourceColumnType === "singleCollaborator") {
+          tables.collaborators = collaboratorsTable;
+          return [
+            ...mem,
+            {
+              name: columnName + "_unresolved",
+              type: "string",
+            },
+            {
+              name: columnName,
+              type: "link",
+              link: {
+                table: "collaborators",
+              },
+            },
+          ];
+        }
+
+        // Object types
+        if (airtableToXataColumnType(column.sourceColumnType) === "object") {
+          // Barcode
+          if (column.sourceColumnType === "barcode") {
+            return [
+              ...mem,
+              {
+                name: columnName,
+                type: "object",
+                columns: [
+                  { name: "text", type: "string" },
+                  {
+                    name: "type",
+                    type: "string",
+                  },
+                ],
+              },
+            ];
+          }
+
+          // Button
+          if (column.sourceColumnType === "button") {
+            return [
+              ...mem,
+              {
+                name: columnName,
+                type: "object",
+                columns: [
+                  { name: "label", type: "string" },
+                  {
+                    name: "url",
+                    type: "string",
+                  },
+                ],
+              },
+            ];
+          }
+        }
+
         return [
           ...mem,
           {
@@ -137,7 +218,6 @@ const airtableToXataColumnType = (
 ): XataColumn["type"] => {
   switch (type) {
     case "autoNumber":
-    case "barcode":
     case "count":
     case "number":
     case "rating":
@@ -164,6 +244,10 @@ const airtableToXataColumnType = (
 
     case "multipleSelects":
       return "multiple";
+
+    case "barcode":
+    case "button":
+      return "object";
   }
 
   return "string";
@@ -211,5 +295,13 @@ const attachmentsTable: Table = {
         },
       ],
     },
+  ],
+};
+
+const collaboratorsTable: Table = {
+  name: "collaborators",
+  columns: [
+    { name: "email", type: "email" },
+    { name: "name", type: "string" },
   ],
 };

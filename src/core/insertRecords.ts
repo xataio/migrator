@@ -3,6 +3,7 @@ import { from, mergeMap, Observable, filter, map } from "rxjs";
 import { Migration } from "./types";
 import { validateRecord } from "./validateRecord";
 import omit from "lodash.omit";
+import { collaboratorSchema } from "../adaptors/airtableTypes";
 
 export type SourceRecord = {
   table: Migration["tables"][-1];
@@ -54,7 +55,7 @@ export function insertRecords$({
     ),
 
     // Insert the records in the appropriate table
-    mergeMap(async ({ table, record, isValid }) => {
+    mergeMap(async ({ table, record, isValid, reasons }) => {
       if (isValid) {
         // Create n-n records (links & attachments)
         const { fields, linkedRecords } = processLinks({
@@ -77,6 +78,7 @@ export function insertRecords$({
         });
       } else {
         // TODO: insert `reasons`
+        console.log(reasons);
         return upsertRecord({
           tableName: getTableErrorName(
             table.targetTableName ?? tableNameFormatter(table.sourceTableName)
@@ -124,11 +126,15 @@ function processLinks({
       c.sourceColumnType === "multipleRecordLinks" &&
       c.allowMultipleRecords === false;
 
-    const isMultiLinks =
+    const isMultipleLinks =
       c.sourceColumnType === "multipleRecordLinks" &&
       c.allowMultipleRecords === true;
 
     const isAttachments = c.sourceColumnType === "multipleAttachments";
+    const isCollaborator = c.sourceColumnType === "singleCollaborator";
+    const isMultipleCollaborators =
+      c.sourceColumnType === "multipleCollaborators";
+
     const columnName =
       c.targetColumnName ?? columnNameFormatter(c.sourceColumnName);
 
@@ -136,11 +142,31 @@ function processLinks({
       toSuffix.add(columnName);
     }
 
-    if (isMultiLinks || isAttachments) {
-      const linkedTableName =
-        c.sourceColumnType === "multipleRecordLinks"
-          ? c.linkSourceTableName
-          : "attachments";
+    if (isCollaborator) {
+      toSuffix.add(columnName);
+      const value = collaboratorSchema.parse(fields[columnName]);
+
+      linkedRecords.push({
+        tableName: "collaborators",
+        id: value.id,
+        fields: omit(value, "id"),
+      });
+    }
+
+    if (isMultipleLinks || isAttachments || isMultipleCollaborators) {
+      const linkedTableName = isAttachments
+        ? "attachments"
+        : isMultipleCollaborators
+        ? "collaborators"
+        : c.sourceColumnType === "multipleRecordLinks"
+        ? c.linkSourceTableName
+        : null;
+
+      if (linkedTableName === null) {
+        throw new Error(
+          "No linked table name defined for " + c.sourceColumnType
+        );
+      }
 
       toSkip.add(columnName);
 
@@ -148,10 +174,10 @@ function processLinks({
 
       if (Array.isArray(values) && values.length > 0) {
         values.forEach((value) => {
-          // Add attachment
-          if (isAttachments) {
+          // Add attachment / collaborator
+          if (isAttachments || isMultipleCollaborators) {
             linkedRecords.push({
-              tableName: "attachments",
+              tableName: linkedTableName,
               id: value.id,
               fields: omit(value, "id"),
             });
@@ -185,6 +211,10 @@ function processLinks({
           [fieldKey + "_unresolved"]:
             Array.isArray(fieldValue) && fieldValue.length === 1
               ? fieldValue[0]
+              : typeof fieldValue === "object" &&
+                fieldValue !== null &&
+                "id" in fieldValue
+              ? (fieldValue as { id: string }).id
               : fieldValue,
         };
       return {

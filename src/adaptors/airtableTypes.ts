@@ -6,8 +6,8 @@ export const airtableColumnType = z.enum([
   "button",
   "checkbox",
   "count",
-  "createdBy",
-  "createdTime",
+  // "createdBy", -> collaborator
+  // "createdTime", -> dateTime
   "currency",
   "date",
   "dateTime",
@@ -15,8 +15,8 @@ export const airtableColumnType = z.enum([
   "email",
   "externalSyncSource",
   "formula",
-  "lastModifiedBy",
-  "lastModifiedTime",
+  // "lastModifiedBy", -> collaborator
+  // "lastModifiedTime", -> dateTime
   "multilineText",
   "multipleAttachments",
   "multipleCollaborators",
@@ -45,10 +45,22 @@ const thumbnailSchema = z.object({
   height: z.number(),
 });
 
+export const collaboratorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
 export const schemas = {
   autoNumber: z.number(),
-  barcode: z.number(),
-  button: z.never(),
+  barcode: z.object({
+    text: z.string(),
+    type: z.string().optional(),
+  }),
+  button: z.object({
+    label: z.string(),
+    url: z.string(),
+  }),
   checkbox: z.boolean(),
   count: z.number(),
   createdBy: z.string(),
@@ -80,7 +92,7 @@ export const schemas = {
       }),
     })
   ),
-  multipleCollaborators: z.array(z.string()),
+  multipleCollaborators: z.array(collaboratorSchema),
   multipleLookupValues: z.never(),
   multipleRecordLinks: z.array(z.string()),
   multipleSelects: z.array(z.string()),
@@ -90,7 +102,7 @@ export const schemas = {
   rating: z.number(),
   richText: z.string(),
   rollup: z.union([z.number(), z.string()]),
-  singleCollaborator: z.string(),
+  singleCollaborator: collaboratorSchema,
   singleLineText: z.string(),
   singleSelect: z.string(),
   text: z.string(),

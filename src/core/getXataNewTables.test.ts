@@ -339,4 +339,225 @@ describe("getXataNewTables", () => {
 
     expect(getXataNewTables(migration)).toStrictEqual(expected);
   });
+
+  it("should deal with collaborator", () => {
+    const migration: Migration = {
+      source: {
+        service: "airtable",
+        apiKey: "",
+        baseId: "",
+      },
+      target: {
+        service: "xata",
+        apiKey: "",
+        databaseColor: "pink",
+        databaseName: "mydb",
+        workspaceId: "myws",
+      },
+      tables: [
+        {
+          sourceTableName: "todolist",
+          sourceTableId: "todolist",
+          columns: [
+            { sourceColumnName: "note", sourceColumnType: "richText" },
+            {
+              sourceColumnName: "assignee",
+              sourceColumnType: "singleCollaborator",
+            },
+          ],
+        },
+      ],
+    };
+
+    const expected: BranchMigration["newTables"] = {
+      todolist: {
+        name: "todolist",
+        columns: [
+          { name: "note", type: "text" },
+          {
+            name: "assignee_unresolved",
+            type: "string",
+          },
+          {
+            name: "assignee",
+            type: "link",
+            link: {
+              table: "collaborators",
+            },
+          },
+        ],
+      },
+      collaborators: {
+        name: "collaborators",
+        columns: [
+          { name: "email", type: "email" },
+          { name: "name", type: "string" },
+        ],
+      },
+      todolist_error: {
+        name: "todolist_error",
+        columns: [
+          { name: "note", type: "string" },
+          {
+            name: "assignee_unresolved",
+            type: "string",
+          },
+        ],
+      },
+    };
+
+    expect(getXataNewTables(migration)).toEqual(expected);
+  });
+
+  it("should deal with multiple collaborators", () => {
+    const migration: Migration = {
+      source: {
+        service: "airtable",
+        apiKey: "",
+        baseId: "",
+      },
+      target: {
+        service: "xata",
+        apiKey: "",
+        databaseColor: "pink",
+        databaseName: "mydb",
+        workspaceId: "myws",
+      },
+      tables: [
+        {
+          sourceTableName: "todolist",
+          sourceTableId: "todolist",
+          columns: [
+            { sourceColumnName: "note", sourceColumnType: "richText" },
+            {
+              sourceColumnName: "assignees",
+              sourceColumnType: "multipleCollaborators",
+            },
+          ],
+        },
+      ],
+    };
+
+    const expected: BranchMigration["newTables"] = {
+      todolist: {
+        name: "todolist",
+        columns: [{ name: "note", type: "text" }],
+      },
+      todolist_error: {
+        name: "todolist_error",
+        columns: [{ name: "note", type: "string" }],
+      },
+      todolist_assignees: {
+        name: "todolist_assignees",
+        columns: [
+          {
+            name: "todolist",
+            type: "link",
+            link: {
+              table: "todolist",
+            },
+          },
+          {
+            name: "todolist_unresolved",
+            type: "string",
+          },
+          {
+            name: "collaborators",
+            type: "link",
+            link: {
+              table: "collaborators",
+            },
+          },
+          {
+            name: "collaborators_unresolved",
+            type: "string",
+          },
+        ],
+      },
+      collaborators: {
+        name: "collaborators",
+        columns: [
+          { name: "email", type: "email" },
+          { name: "name", type: "string" },
+        ],
+      },
+    };
+
+    expect(getXataNewTables(migration)).toEqual(expected);
+  });
+
+  it("should deal with object types", () => {
+    const migration: Migration = {
+      source: {
+        service: "airtable",
+        apiKey: "",
+        baseId: "",
+      },
+      target: {
+        service: "xata",
+        apiKey: "",
+        databaseColor: "pink",
+        databaseName: "mydb",
+        workspaceId: "myws",
+      },
+      tables: [
+        {
+          sourceTableName: "objects",
+          sourceTableId: "objects",
+          columns: [
+            {
+              sourceColumnName: "barcode",
+              sourceColumnType: "barcode",
+            },
+            {
+              sourceColumnName: "button",
+              sourceColumnType: "button",
+            },
+          ],
+        },
+      ],
+    };
+
+    const expected: BranchMigration["newTables"] = {
+      objects: {
+        name: "objects",
+        columns: [
+          {
+            name: "barcode",
+            type: "object",
+            columns: [
+              { name: "text", type: "string" },
+              {
+                name: "type",
+                type: "string",
+              },
+            ],
+          },
+          {
+            name: "button",
+            type: "object",
+            columns: [
+              { name: "label", type: "string" },
+              { name: "url", type: "string" },
+            ],
+          },
+        ],
+      },
+      objects_error: {
+        name: "objects_error",
+        columns: [
+          {
+            name: "barcode",
+            type: "string",
+          },
+          {
+            name: "button",
+            type: "string",
+          },
+        ],
+      },
+    };
+
+    expect(getXataNewTables(migration)).toEqual(expected);
+  });
 });
