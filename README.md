@@ -1,4 +1,8 @@
-# Xata migrator
+# Airtable to Xata
+
+![01ac6b3a-edf8-4ff0-b74d-6c4b295eacfa](https://user-images.githubusercontent.com/1761469/192961850-fe11c4dc-3885-4a6e-b701-4f8115e47542.gif)
+
+Migrate any Airtable base to a Xata database.
 
 ## Getting started
 
