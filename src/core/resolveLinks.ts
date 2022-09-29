@@ -1,4 +1,13 @@
-import { debounceTime, filter, from, mergeMap, Observable } from "rxjs";
+import {
+  concatMap,
+  debounceTime,
+  delay,
+  filter,
+  from,
+  mergeMap,
+  Observable,
+  of,
+} from "rxjs";
 import { Schema } from "../xata/xataSchemas";
 
 export function resolveLinks({
@@ -21,7 +30,7 @@ export function resolveLinks({
         filter((record) =>
           Object.keys(record.fields).some((key) => key.endsWith("_unresolved"))
         ),
-        debounceTime(100), // Avoid xata rate limit
+        concatMap((i) => of(i).pipe(delay(500))), // Avoid xata rate limit
         mergeMap(async (record) =>
           updateRecord({
             tableName: table.name,
