@@ -77,8 +77,6 @@ export function insertRecords$({
           fields,
         });
       } else {
-        // TODO: insert `reasons`
-        console.log(reasons);
         return upsertRecord({
           tableName: getTableErrorName(
             table.targetTableName ?? tableNameFormatter(table.sourceTableName)
@@ -94,7 +92,9 @@ export function insertRecords$({
                   ? JSON.stringify(value)
                   : String(value),
             }),
-            {}
+            {
+              __reasons: JSON.stringify(reasons),
+            }
           ),
         });
       }

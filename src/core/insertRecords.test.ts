@@ -226,6 +226,7 @@ describe("insertRecords", () => {
     ];
 
     const upsertRecord = vi.fn(async () => {});
+
     const getTableSourceRecords$ = () =>
       new Observable<SourceRecord>((s) => {
         s.next({
@@ -266,6 +267,7 @@ describe("insertRecords", () => {
       id: "1-error",
       fields: {
         age: "33",
+        __reasons: '[{"key":"name","message":"Required"}]',
       },
     });
 
@@ -274,6 +276,8 @@ describe("insertRecords", () => {
       id: "2-error",
       fields: {
         name: "tejas",
+        __reasons:
+          '[{"key":"isCool","message":"Expected boolean, received string"}]',
         isCool: "of course!",
       },
     });

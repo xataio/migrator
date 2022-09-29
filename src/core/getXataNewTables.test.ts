@@ -46,6 +46,7 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "name",
             type: "string",
@@ -119,13 +120,14 @@ describe("getXataNewTables", () => {
       teamMember_error: {
         name: "teamMember_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "name",
             type: "string",
           },
           { name: "age", type: "string" },
           { name: "email", type: "string" },
-          { name: "team_unresolved", type: "string" },
+          { name: "team", type: "string" },
         ],
       },
       team: {
@@ -140,6 +142,7 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "name",
             type: "string",
@@ -204,6 +207,7 @@ describe("getXataNewTables", () => {
       teamMember_error: {
         name: "teamMember_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "name",
             type: "string",
@@ -233,6 +237,7 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "name",
             type: "string",
@@ -324,7 +329,10 @@ describe("getXataNewTables", () => {
       },
       users_error: {
         name: "users_error",
-        columns: [{ name: "name", type: "string" }],
+        columns: [
+          { name: "__reasons", type: "string" },
+          { name: "name", type: "string" },
+        ],
       },
       users_profilePicture: {
         name: "users_profilePicture",
@@ -397,9 +405,10 @@ describe("getXataNewTables", () => {
       todolist_error: {
         name: "todolist_error",
         columns: [
+          { name: "__reasons", type: "string" },
           { name: "note", type: "string" },
           {
-            name: "assignee_unresolved",
+            name: "assignee",
             type: "string",
           },
         ],
@@ -445,7 +454,10 @@ describe("getXataNewTables", () => {
       },
       todolist_error: {
         name: "todolist_error",
-        columns: [{ name: "note", type: "string" }],
+        columns: [
+          { name: "__reasons", type: "string" },
+          { name: "note", type: "string" },
+        ],
       },
       todolist_assignees: {
         name: "todolist_assignees",
@@ -546,6 +558,7 @@ describe("getXataNewTables", () => {
       objects_error: {
         name: "objects_error",
         columns: [
+          { name: "__reasons", type: "string" },
           {
             name: "barcode",
             type: "string",
