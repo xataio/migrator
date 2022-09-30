@@ -26,7 +26,7 @@ Steps to follow:
 - Open `src/index.ts`
 - Paste the content inside the `migrate()` function
 
-/!\ The `apiKey` for Airtable is part of the output script, if you want to version control safely this script, you can move this value to `.env` with the `XATA_API_KEY` key. /!\
+⚠️ The `apiKey` for Airtable is part of the output script, if you want to version control safely this script, you can move this value to `.env` with the `XATA_API_KEY` key.
 
 ### Setup your credentials
 
