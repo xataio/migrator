@@ -16,14 +16,12 @@ import { getAllAirtableRecords$ } from "../adaptors/airtable";
 import { resolveLinks } from "./resolveLinks";
 import { getAllXataRecords$ } from "../adaptors/xata";
 import { verifyLinksMigration } from "./verifyLinksMigration";
-import { createWriteStream } from "fs";
-import { join } from "path";
 
 dotenv.config();
 
-const logFile = createWriteStream(join(__dirname, "../../debug.txt"));
-
 export async function migrate(migration: Migration) {
+  let diagnostic = "";
+
   const sourceAPIKey = migration.source.apiKey ?? process.env.AIRTABLE_API_KEY;
 
   const targetAPIKey = migration.target.apiKey ?? process.env.XATA_API_KEY;
@@ -212,11 +210,20 @@ export async function migrate(migration: Migration) {
       if (!migration.skipCheckAndClean) {
         subTasks.push(
           await task("Check migration and cleanup", async () => {
-            // TODO: logs non empty table in the log file
             const emptyErrorTables = Object.keys(newTables).filter(
               (tableName) =>
                 tableName.endsWith("_error") && !bulkOperations.has(tableName)
             );
+
+            // Add error tables in the log file
+            Object.keys(newTables)
+              .filter(
+                (tableName) =>
+                  tableName.endsWith("_error") && bulkOperations.has(tableName)
+              )
+              .forEach((tableName) => {
+                diagnostic += `[migration error] Some errors founds in "${tableName}". See: https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}/branches/main/tables/${tableName}\n`;
+              });
 
             const links = await verifyLinksMigration({
               tables: newTables,
@@ -247,8 +254,7 @@ export async function migrate(migration: Migration) {
             });
 
             links.errorTables.forEach((t) => {
-              // TODO: add link to UI
-              logFile.write(`${t} has some unresolved links \n`);
+              diagnostic += `[unresolved links] Some links can't be resolve in "${t}". See: https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}/branches/main/tables/${t}\n`;
             });
 
             await executeBranchMigrationPlan({
@@ -279,6 +285,8 @@ export async function migrate(migration: Migration) {
       setTitle(
         `Your xatabase is ready! https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}`
       );
+
+      console.log(diagnostic);
     }
   );
 }

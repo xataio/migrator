@@ -71,5 +71,3 @@ $ npm start
 If everything went well, the script will print you the address of your new Xatabase.
 
 To learn more how to use it, please refer to our documentation https://xata.io/docs/getting-started
-
-In case of some errors, you can have more details about them in `debug.txt`
