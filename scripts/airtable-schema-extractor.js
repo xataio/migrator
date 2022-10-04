@@ -43,6 +43,10 @@ for (const table of tables) {
       sourceColumnName: column.querySelector(".columnName").textContent,
       sourceColumnType: mapToAirtableType(type),
     };
+    
+    if(c.sourceColumnName.toLowerCase() === "id") {
+      c.targetColumnName = camelize(t.sourceTableName + "Id")
+    }
 
     if (type.includes("Lookup")) {
       continue;
