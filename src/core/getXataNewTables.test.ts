@@ -46,13 +46,13 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "name",
-            type: "string",
+            type: "text",
           },
-          { name: "age", type: "string" },
-          { name: "email", type: "string" },
+          { name: "age", type: "text" },
+          { name: "email", type: "text" },
         ],
       },
     };
@@ -120,14 +120,14 @@ describe("getXataNewTables", () => {
       teamMember_error: {
         name: "teamMember_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "name",
-            type: "string",
+            type: "text",
           },
-          { name: "age", type: "string" },
-          { name: "email", type: "string" },
-          { name: "team", type: "string" },
+          { name: "age", type: "text" },
+          { name: "email", type: "text" },
+          { name: "team", type: "text" },
         ],
       },
       team: {
@@ -142,10 +142,10 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "name",
-            type: "string",
+            type: "text",
           },
         ],
       },
@@ -207,14 +207,14 @@ describe("getXataNewTables", () => {
       teamMember_error: {
         name: "teamMember_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "name",
-            type: "string",
+            type: "text",
           },
-          { name: "age", type: "string" },
-          { name: "email", type: "string" },
-          { name: "team", type: "string" },
+          { name: "age", type: "text" },
+          { name: "email", type: "text" },
+          { name: "team", type: "text" },
         ],
       },
       teamMember_team: {
@@ -238,10 +238,10 @@ describe("getXataNewTables", () => {
       team_error: {
         name: "team_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "name",
-            type: "string",
+            type: "text",
           },
         ],
       },
@@ -331,9 +331,9 @@ describe("getXataNewTables", () => {
       users_error: {
         name: "users_error",
         columns: [
-          { name: "__reasons", type: "string" },
-          { name: "name", type: "string" },
-          { name: "profilePicture", type: "string"}
+          { name: "__reasons", type: "text" },
+          { name: "name", type: "text" },
+          { name: "profilePicture", type: "text"}
         ],
       },
       users_profilePicture: {
@@ -407,11 +407,11 @@ describe("getXataNewTables", () => {
       todolist_error: {
         name: "todolist_error",
         columns: [
-          { name: "__reasons", type: "string" },
-          { name: "note", type: "string" },
+          { name: "__reasons", type: "text" },
+          { name: "note", type: "text" },
           {
             name: "assignee",
-            type: "string",
+            type: "text",
           },
         ],
       },
@@ -457,9 +457,9 @@ describe("getXataNewTables", () => {
       todolist_error: {
         name: "todolist_error",
         columns: [
-          { name: "__reasons", type: "string" },
-          { name: "note", type: "string" },
-          { name: "assignees", type: "string"}
+          { name: "__reasons", type: "text" },
+          { name: "note", type: "text" },
+          { name: "assignees", type: "text"}
         ],
       },
       todolist_assignees: {
@@ -561,14 +561,14 @@ describe("getXataNewTables", () => {
       objects_error: {
         name: "objects_error",
         columns: [
-          { name: "__reasons", type: "string" },
+          { name: "__reasons", type: "text" },
           {
             name: "barcode",
-            type: "string",
+            type: "text",
           },
           {
             name: "button",
-            type: "string",
+            type: "text",
           },
         ],
       },

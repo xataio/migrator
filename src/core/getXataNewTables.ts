@@ -206,9 +206,9 @@ export const getXataNewTables = (migration: Migration) => {
           const columnName: string =
             column.targetColumnName ??
             columnNameFormatter(column.sourceColumnName);
-          return [...mem, { name: columnName, type: "string" }];
+          return [...mem, { name: columnName, type: "text" }];
         },
-        [{ name: "__reasons", type: "string" }]
+        [{ name: "__reasons", type: "text" }]
       ),
     };
   });
