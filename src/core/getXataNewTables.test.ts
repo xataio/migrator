@@ -214,6 +214,7 @@ describe("getXataNewTables", () => {
           },
           { name: "age", type: "string" },
           { name: "email", type: "string" },
+          { name: "team", type: "string" },
         ],
       },
       teamMember_team: {
@@ -332,6 +333,7 @@ describe("getXataNewTables", () => {
         columns: [
           { name: "__reasons", type: "string" },
           { name: "name", type: "string" },
+          { name: "profilePicture", type: "string"}
         ],
       },
       users_profilePicture: {
@@ -457,6 +459,7 @@ describe("getXataNewTables", () => {
         columns: [
           { name: "__reasons", type: "string" },
           { name: "note", type: "string" },
+          { name: "assignees", type: "string"}
         ],
       },
       todolist_assignees: {

@@ -201,15 +201,15 @@ export const getXataNewTables = (migration: Migration) => {
     // error table
     tables[getTableErrorName(tableName)] = {
       name: getTableErrorName(tableName),
-      columns: [
-        { name: "__reasons", type: "string" },
-        ...tables[tableName].columns
-          .filter((i) => !i.name.endsWith("_unresolved"))
-          .map((i) => ({
-            name: i.name,
-            type: "string" as const,
-          })),
-      ],
+      columns: table.columns.reduce(
+        (mem, column) => {
+          const columnName: string =
+            column.targetColumnName ??
+            columnNameFormatter(column.sourceColumnName);
+          return [...mem, { name: columnName, type: "string" }];
+        },
+        [{ name: "__reasons", type: "string" }]
+      ),
     };
   });
 
