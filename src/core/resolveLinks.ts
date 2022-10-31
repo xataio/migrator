@@ -21,7 +21,6 @@ export function resolveLinks({
         filter((record) =>
           Object.keys(record.fields).some((key) => key.endsWith("_unresolved"))
         ),
-        concatMap((i) => of(i).pipe(delay(500))), // Avoid xata rate limit
         mergeMap(async (record) =>
           updateRecord({
             tableName: table.name,
