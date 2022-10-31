@@ -1,24 +1,30 @@
 import undici from "undici";
 
-export type XataFetcherExtraProps = {
+export type XataWorkspaceFetcherExtraProps = {
   apiKey: string;
   workspaceId: string;
+  regionId: string;
 };
 
 export type ErrorWrapper<TError> =
   | TError
   | { status: "unknown"; payload: string };
 
-export type XataFetcherOptions<TBody, THeaders, TQueryParams, TPathParams> = {
+export type XataWorkspaceFetcherOptions<
+  TBody,
+  THeaders,
+  TQueryParams,
+  TPathParams
+> = {
   url: string;
   method: string;
   body?: TBody;
   headers?: THeaders;
   queryParams?: TQueryParams;
   pathParams?: TPathParams;
-} & XataFetcherExtraProps;
+} & XataWorkspaceFetcherExtraProps;
 
-export async function xataFetch<
+export async function xataWorkspaceFetch<
   TData,
   TError,
   TBody extends {} | undefined | null,
@@ -34,7 +40,8 @@ export async function xataFetch<
   queryParams,
   apiKey,
   workspaceId,
-}: XataFetcherOptions<
+  regionId,
+}: XataWorkspaceFetcherOptions<
   TBody,
   THeaders,
   TQueryParams,
@@ -42,7 +49,7 @@ export async function xataFetch<
 >): Promise<TData> {
   try {
     const response = await undici.fetch(
-      `https://${workspaceId}.xata.sh${resolveUrl(
+      `https://${workspaceId}.${regionId}.xata.sh${resolveUrl(
         url,
         queryParams,
         pathParams
@@ -52,21 +59,13 @@ export async function xataFetch<
         body: body ? JSON.stringify(body) : undefined,
         headers: {
           "Content-Type": "application/json",
-          "accept-encoding": "", // skip gzip
           Authorization: `Bearer ${apiKey}`,
           ...headers,
         },
       }
     );
-
     if (!response.ok) {
       let error: ErrorWrapper<TError>;
-      if (response.status === 429) {
-        throw {
-          status: 429,
-          payload: "Rate limit exceeded!",
-        };
-      }
       try {
         error = {
           status: response.status,
@@ -88,13 +87,10 @@ export async function xataFetch<
     if (response.headers.get("content-type")?.includes("json")) {
       return (await response.json()) as any;
     } else {
-      // if it is not a json response, assumes it is a blob and cast it to TData
+      // if it is not a json response, asume it is a blob and cast it to TData
       return (await response.blob()) as unknown as TData;
     }
   } catch (e) {
-    if (e && typeof e === "object" && "status" in e && "payload" in e) {
-      throw e; // Proxy valid error
-    }
     throw {
       status: "unknown" as const,
       payload:

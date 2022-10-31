@@ -1,6 +1,6 @@
 import { EMPTY, lastValueFrom, Observable } from "rxjs";
 import { describe, it, expect, vitest } from "vitest";
-import { Schema } from "../xata/xataSchemas";
+import { Schema } from "../xataWorkspace/xataWorkspaceSchemas";
 import { resolveLinks, ResolveLinksOptions } from "./resolveLinks";
 
 describe("resolveLinks", () => {

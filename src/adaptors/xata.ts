@@ -34,6 +34,7 @@ const responseSchema = z.object({
 
 const getPaginatedRecords$ = ({
   workspaceId,
+  regionId,
   databaseName,
   branch,
   apiKey,
@@ -41,6 +42,7 @@ const getPaginatedRecords$ = ({
   page,
 }: {
   workspaceId: string;
+  regionId: string;
   databaseName: string;
   branch: string;
   apiKey: string;
@@ -59,7 +61,7 @@ const getPaginatedRecords$ = ({
   };
 }) =>
   fromFetch(
-    `https://${workspaceId}.xata.sh/db/${databaseName}:${branch}/tables/${tableName}/query`,
+    `https://${workspaceId}.${regionId}.xata.sh/db/${databaseName}:${branch}/tables/${tableName}/query`,
     {
       method: "POST",
       headers: {
@@ -85,6 +87,7 @@ const getPaginatedRecords$ = ({
 
 export const getAllXataRecords$ = (options: {
   workspaceId: string;
+  regionId: string;
   databaseName: string;
   branch: string;
   apiKey: string;

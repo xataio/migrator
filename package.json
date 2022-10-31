@@ -7,7 +7,7 @@
     "start": "node -r @swc-node/register src/index.ts",
     "play": "node -r @swc-node/register src/playground.ts",
     "test": "vitest",
-    "gen": "openapi-codegen gen xata"
+    "gen": "openapi-codegen gen xataCore && openapi-codegen gen xataWorkspace"
   },
   "keywords": [
     "xata",

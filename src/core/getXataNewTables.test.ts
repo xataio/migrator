@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { BranchMigration } from "../xata/xataSchemas";
+import { BranchMigration } from "../xataWorkspace/xataWorkspaceSchemas";
 import { getXataNewTables } from "./getXataNewTables";
 import { Migration } from "./types";
 
@@ -17,6 +17,7 @@ describe("getXataNewTables", () => {
         databaseColor: "green",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -72,6 +73,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -167,6 +169,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -263,6 +266,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -333,7 +337,7 @@ describe("getXataNewTables", () => {
         columns: [
           { name: "__reasons", type: "text" },
           { name: "name", type: "text" },
-          { name: "profilePicture", type: "text"}
+          { name: "profilePicture", type: "text" },
         ],
       },
       users_profilePicture: {
@@ -363,6 +367,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -433,6 +438,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {
@@ -459,7 +465,7 @@ describe("getXataNewTables", () => {
         columns: [
           { name: "__reasons", type: "text" },
           { name: "note", type: "text" },
-          { name: "assignees", type: "text"}
+          { name: "assignees", type: "text" },
         ],
       },
       todolist_assignees: {
@@ -514,6 +520,7 @@ describe("getXataNewTables", () => {
         databaseColor: "pink",
         databaseName: "mydb",
         workspaceId: "myws",
+        regionId: "my-region",
       },
       tables: [
         {

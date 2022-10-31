@@ -4,10 +4,10 @@ import task, { TaskAPI } from "tasuku";
 
 import {
   bulkInsertTableRecords,
-  createDatabase,
   executeBranchMigrationPlan,
   queryTable,
-} from "../xata/xataComponents";
+} from "../xataWorkspace/xataWorkspaceComponents";
+import { createDatabase } from "../xataCore/xataCoreComponents";
 import { getXataNewTables } from "./getXataNewTables";
 import { Migration } from "./types";
 import { insertRecords$ } from "./insertRecords";
@@ -67,11 +67,12 @@ export async function migrate(migration: Migration) {
               const createDbTask = await task("Create database", async () => {
                 await createDatabase({
                   apiKey: targetAPIKey,
-                  workspaceId: migration.target.workspaceId,
                   pathParams: {
+                    workspaceId: migration.target.workspaceId,
                     dbName: migration.target.databaseName,
                   },
                   body: {
+                    region: migration.target.regionId,
                     ui: {
                       color: `xata-${migration.target.databaseColor}`,
                     },
@@ -85,6 +86,7 @@ export async function migrate(migration: Migration) {
                   await executeBranchMigrationPlan({
                     apiKey: targetAPIKey,
                     workspaceId: migration.target.workspaceId,
+                    regionId: migration.target.regionId,
                     body: {
                       version: 0,
                       migration: {
@@ -150,6 +152,7 @@ export async function migrate(migration: Migration) {
                     bulkInsertTableRecords({
                       apiKey: targetAPIKey,
                       workspaceId: migration.target.workspaceId,
+                      regionId: migration.target.regionId,
                       pathParams: {
                         dbBranchName: migration.target.databaseName + ":main",
                         tableName,
@@ -185,6 +188,7 @@ export async function migrate(migration: Migration) {
                   getTableTargetRecords$(tableName) {
                     return getAllXataRecords$({
                       workspaceId: migration.target.workspaceId,
+                      regionId: migration.target.regionId,
                       apiKey: targetAPIKey,
                       branch: "main",
                       databaseName: migration.target.databaseName,
@@ -220,6 +224,7 @@ export async function migrate(migration: Migration) {
                             bulkInsertTableRecords({
                               apiKey: targetAPIKey,
                               workspaceId: migration.target.workspaceId,
+                              regionId: migration.target.regionId,
                               pathParams: {
                                 dbBranchName:
                                   migration.target.databaseName + ":main",
@@ -276,6 +281,7 @@ export async function migrate(migration: Migration) {
                   const { records } = await queryTable({
                     apiKey: targetAPIKey,
                     workspaceId: migration.target.workspaceId,
+                    regionId: migration.target.regionId,
                     pathParams: {
                       dbBranchName: `${migration.target.databaseName}:main`,
                       tableName,
@@ -303,6 +309,7 @@ export async function migrate(migration: Migration) {
             await executeBranchMigrationPlan({
               apiKey: targetAPIKey,
               workspaceId: migration.target.workspaceId,
+              regionId: migration.target.regionId,
               body: {
                 version: 1,
                 migration: {

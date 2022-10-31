@@ -1,6 +1,9 @@
 import { camel } from "case";
 import { AirtableColumnType } from "../adaptors/airtableTypes";
-import { Column as XataColumn, Table } from "../xata/xataSchemas";
+import {
+  Column as XataColumn,
+  Table,
+} from "../xataWorkspace/xataWorkspaceSchemas";
 import { Migration } from "./types";
 
 type XataTableName = string;

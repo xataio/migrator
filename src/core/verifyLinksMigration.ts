@@ -1,5 +1,5 @@
 import { filter, from, lastValueFrom, mergeMap, reduce } from "rxjs";
-import { BranchMigration } from "../xata/xataSchemas";
+import { BranchMigration } from "../xataWorkspace/xataWorkspaceSchemas";
 import { XataTables } from "./getXataNewTables";
 
 type VerifyLinksMigrationOptions = {

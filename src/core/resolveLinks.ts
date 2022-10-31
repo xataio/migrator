@@ -1,5 +1,5 @@
-import { concatMap, delay, filter, from, mergeMap, Observable, of } from "rxjs";
-import { Schema } from "../xata/xataSchemas";
+import { filter, from, mergeMap, Observable } from "rxjs";
+import { Schema } from "../xataWorkspace/xataWorkspaceSchemas";
 
 export function resolveLinks({
   xataSchema,

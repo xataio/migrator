@@ -15,6 +15,7 @@ const target: Migration["target"] = {
   databaseName: "myDb",
   service: "xata",
   workspaceId: "myWorkspace",
+  regionId: "my-region",
 };
 
 describe("insertRecords", () => {

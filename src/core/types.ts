@@ -1,5 +1,5 @@
 import { AirtableColumnType } from "../adaptors/airtableTypes";
-import { Column as XataColumn } from "../xata/xataSchemas";
+import { Column as XataColumn } from "../xataWorkspace/xataWorkspaceSchemas";
 
 export type Migration = {
   // Source of the migration
@@ -20,6 +20,7 @@ export type Migration = {
      */
     apiKey?: string;
     workspaceId: string;
+    regionId: string;
     databaseName: string;
     databaseColor:
       | "gray"
