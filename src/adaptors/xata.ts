@@ -38,6 +38,7 @@ const getPaginatedRecords$ = ({
   branch,
   apiKey,
   tableName,
+  page,
 }: {
   workspaceId: string;
   databaseName: string;
@@ -65,6 +66,7 @@ const getPaginatedRecords$ = ({
         ["Content-Type"]: "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      body: JSON.stringify({ page }),
     }
   ).pipe(
     switchMap(async (response) => {
