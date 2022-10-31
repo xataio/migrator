@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { lastValueFrom, map } from "rxjs";
+import { bufferCount, catchError, from, lastValueFrom, map, tap } from "rxjs";
 import task, { TaskAPI } from "tasuku";
 
 import {
@@ -7,7 +7,6 @@ import {
   createDatabase,
   executeBranchMigrationPlan,
   queryTable,
-  updateRecordWithID,
 } from "../xata/xataComponents";
 import { getXataNewTables } from "./getXataNewTables";
 import { Migration } from "./types";
@@ -52,7 +51,8 @@ export async function migrate(migration: Migration) {
 
   // Shared variables across steps
   const newTables = getXataNewTables(migration);
-  const bulkOperations = new Map<string, Record<string, unknown>[]>();
+  const migrateRecordsOperations = new Map<string, Record<string, unknown>[]>();
+  const resolveLinksOperations = new Map<string, Record<string, unknown>[]>();
   const subTasks: TaskAPI[] = [];
 
   await task(
@@ -129,9 +129,9 @@ export async function migrate(migration: Migration) {
                     async upsertRecord(payload) {
                       // Collect records for sending them later as bulk operation
                       const previousOperations =
-                        bulkOperations.get(payload.tableName) || [];
+                        migrateRecordsOperations.get(payload.tableName) || [];
 
-                      bulkOperations.set(payload.tableName, [
+                      migrateRecordsOperations.set(payload.tableName, [
                         ...previousOperations,
                         { id: payload.id, ...payload.fields },
                       ]);
@@ -144,7 +144,7 @@ export async function migrate(migration: Migration) {
             );
 
             const insertRecordTask = await task.group((task) =>
-              Array.from(bulkOperations.entries()).map(
+              Array.from(migrateRecordsOperations.entries()).map(
                 ([tableName, records]) => {
                   return task(`Insert records into ${tableName}`, () =>
                     bulkInsertTableRecords({
@@ -173,36 +173,77 @@ export async function migrate(migration: Migration) {
       // Resolve all the links
       if (!migration.skipResolveLinks) {
         subTasks.push(
-          await task("Resolve links between tables", async () => {
-            await lastValueFrom(
-              resolveLinks({
-                xataSchema: {
-                  tables: Object.values(newTables),
-                },
-                getTableTargetRecords$(tableName) {
-                  return getAllXataRecords$({
-                    workspaceId: migration.target.workspaceId,
-                    apiKey: targetAPIKey,
-                    branch: "main",
-                    databaseName: migration.target.databaseName,
-                    tableName,
-                  }).pipe(map(({ id, ...fields }) => ({ id, fields })));
-                },
-                updateRecord(payload) {
-                  return updateRecordWithID({
-                    apiKey: targetAPIKey,
-                    workspaceId: migration.target.workspaceId,
-                    pathParams: {
-                      dbBranchName: migration.target.databaseName + ":main",
-                      recordId: payload.id,
-                      tableName: payload.tableName,
-                    },
-                    body: payload.fields,
-                  });
-                },
-              })
-            );
-          })
+          await task(
+            "Resolve links between tables",
+            async ({ task, setStatus }) => {
+              let recordsCount = 0;
+              await lastValueFrom(
+                resolveLinks({
+                  xataSchema: {
+                    tables: Object.values(newTables),
+                  },
+                  getTableTargetRecords$(tableName) {
+                    return getAllXataRecords$({
+                      workspaceId: migration.target.workspaceId,
+                      apiKey: targetAPIKey,
+                      branch: "main",
+                      databaseName: migration.target.databaseName,
+                      tableName,
+                    }).pipe(
+                      tap(() => setStatus(++recordsCount + " links found")),
+                      map(({ id, ...fields }) => ({ id, fields }))
+                    );
+                  },
+                  async updateRecord(payload) {
+                    // Collect records for sending them later as bulk operation
+                    const previousOperations =
+                      resolveLinksOperations.get(payload.tableName) || [];
+
+                    resolveLinksOperations.set(payload.tableName, [
+                      ...previousOperations,
+                      { id: payload.id, ...payload.fields },
+                    ]);
+
+                    return payload;
+                  },
+                })
+              );
+
+              const resolveLinksTask = await task.group((task) =>
+                Array.from(resolveLinksOperations.entries()).map(
+                  ([tableName, records]) => {
+                    return task(`Resolve ${tableName} links`, () =>
+                      lastValueFrom(
+                        from(records).pipe(
+                          bufferCount(100),
+                          map((records) =>
+                            bulkInsertTableRecords({
+                              apiKey: targetAPIKey,
+                              workspaceId: migration.target.workspaceId,
+                              pathParams: {
+                                dbBranchName:
+                                  migration.target.databaseName + ":main",
+                                tableName,
+                              },
+                              body: {
+                                records,
+                              },
+                            })
+                          ),
+                          catchError(async (err) => {
+                            console.log(err);
+                          })
+                        )
+                      )
+                    );
+                  }
+                )
+              );
+
+              // Collapse nested tasks on success
+              resolveLinksTask.clear();
+            }
+          )
         );
       }
 
@@ -212,14 +253,16 @@ export async function migrate(migration: Migration) {
           await task("Check migration and cleanup", async () => {
             const emptyErrorTables = Object.keys(newTables).filter(
               (tableName) =>
-                tableName.endsWith("_error") && !bulkOperations.has(tableName)
+                tableName.endsWith("_error") &&
+                !migrateRecordsOperations.has(tableName)
             );
 
             // Add error tables in the log file
             Object.keys(newTables)
               .filter(
                 (tableName) =>
-                  tableName.endsWith("_error") && bulkOperations.has(tableName)
+                  tableName.endsWith("_error") &&
+                  migrateRecordsOperations.has(tableName)
               )
               .forEach((tableName) => {
                 diagnostic += `[migration error] Some errors founds in "${tableName}". See: https://app.xata.io/workspaces/${migration.target.workspaceId}/dbs/${migration.target.databaseName}/branches/main/tables/${tableName}\n`;
