@@ -44,7 +44,7 @@ AIRTABLE_API_KEY=key...
 
 ### Fine-tune your migration
 
-First step, you need to provide a `target.workspaceId`, you can find it in the workspace configuration tab. The workspace ID it part of the `Workspace API base URL` => `https://{workspaceId}.xata.sh/db/{database}`
+First step, you need to provide a `target.workspaceId`, you can find it in the workspace configuration tab. The workspace ID it part of the `Workspace API base URL` => `https://{workspaceId}.{regionId}.xata.sh/db/{database}`
 
 You can choose any `databaseName` and `databaseColor` that you want, the database must not exists! (the migrator will create the xata database for you).
 
