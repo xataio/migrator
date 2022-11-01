@@ -5,6 +5,7 @@ var data = {
   target: {
     service: "xata",
     workspaceId: "-- todo --",
+    regionId: "eu-west-1",
     databaseName: "-- todo --",
     databaseColor: "green",
   },
