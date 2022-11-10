@@ -91,6 +91,9 @@ export async function xataWorkspaceFetch<
       return (await response.blob()) as unknown as TData;
     }
   } catch (e) {
+    if (typeof e === "object" && e && "status" in e) {
+      throw e;
+    }
     throw {
       status: "unknown" as const,
       payload:
