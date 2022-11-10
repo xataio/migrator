@@ -44,9 +44,9 @@ for (const table of tables) {
       sourceColumnName: column.querySelector(".columnName").textContent,
       sourceColumnType: mapToAirtableType(type),
     };
-    
-    if(c.sourceColumnName.toLowerCase() === "id") {
-      c.targetColumnName = camelize(t.sourceTableName + "Id")
+
+    if (c.sourceColumnName.toLowerCase() === "id") {
+      c.targetColumnName = camelize(t.sourceTableName + "Id");
     }
 
     if (type.includes("Lookup")) {
@@ -87,6 +87,7 @@ function mapToAirtableType(type) {
   if (type === "Multiple collaborator") return "multipleCollaborators";
   if (type === "URL") return "url";
   if (type === "Collaborator") return "singleCollaborator";
+  if (type.startsWith("Long text")) return "longText";
   if (type.endsWith("time")) return "dateTime";
   if (type.endsWith("by")) return "singleCollaborator";
 
