@@ -1,3 +1,7 @@
+if (!window.location.pathname.endsWith("/api/docs")) {
+  throw new Error("You need to run this script on the API documentation page");
+}
+
 var data = {
   source: {
     service: "airtable",
