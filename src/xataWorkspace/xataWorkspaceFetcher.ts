@@ -59,6 +59,7 @@ export async function xataWorkspaceFetch<
         body: body ? JSON.stringify(body) : undefined,
         headers: {
           "Content-Type": "application/json",
+          "X-Xata-Agent": "service=migrator",
           Authorization: `Bearer ${apiKey}`,
           ...headers,
         },
