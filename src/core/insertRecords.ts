@@ -144,13 +144,15 @@ function processLinks({
 
     if (isCollaborator) {
       toSuffix.add(columnName);
-      const value = collaboratorSchema.parse(fields[columnName]);
+      if (fields[columnName]) {
+        const value = collaboratorSchema.parse(fields[columnName]);
 
-      linkedRecords.push({
-        tableName: "collaborators",
-        id: value.id,
-        fields: omit(value, "id"),
-      });
+        linkedRecords.push({
+          tableName: "collaborators",
+          id: value.id,
+          fields: omit(value, "id"),
+        });
+      }
     }
 
     if (isMultipleLinks || isAttachments || isMultipleCollaborators) {

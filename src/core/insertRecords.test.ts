@@ -725,6 +725,57 @@ describe("insertRecords", () => {
     });
   });
 
+  it("should deal with single collaborator (undefined)", async () => {
+    const tables: Migration["tables"] = [
+      {
+        sourceTableName: "todo",
+        sourceTableId: "todo",
+        columns: [
+          { sourceColumnName: "description", sourceColumnType: "text" },
+          {
+            sourceColumnName: "assignee",
+            sourceColumnType: "singleCollaborator",
+          },
+        ],
+      },
+    ];
+
+    const upsertRecord = vi.fn(async () => {});
+
+    const getTableSourceRecords$ = () =>
+      new Observable<SourceRecord>((s) => {
+        s.next({
+          table: tables[0],
+          id: "1-success",
+          fields: {
+            description: "Finish Airtable migrator",
+          },
+        });
+
+        return s.complete();
+      });
+
+    await lastValueFrom(
+      insertRecords$({
+        migration: {
+          tables,
+          source,
+          target,
+        },
+        getTableSourceRecords$,
+        upsertRecord,
+      })
+    );
+
+    expect(upsertRecord).toBeCalledWith({
+      tableName: "todo",
+      id: "1-success",
+      fields: {
+        description: "Finish Airtable migrator",
+      },
+    });
+  });
+
   it("should deal with multiple collaborators", async () => {
     const tables: Migration["tables"] = [
       {
