@@ -5,6 +5,7 @@ if (!window.location.pathname.endsWith("/api/docs")) {
 var data = {
   source: {
     service: "airtable",
+    apiKey: "-- todo --",
   },
   target: {
     service: "xata",
@@ -16,9 +17,6 @@ var data = {
   tables: [],
 };
 
-data.source.apiKey = document
-  .querySelector("[data-api-key]")
-  .getAttribute("data-api-key");
 data.source.baseId = window.location.pathname.split("/")[1];
 
 data.target.databaseName = camelize(
