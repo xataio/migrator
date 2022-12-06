@@ -18,6 +18,8 @@ Unfortunately, the metadata API from Airtable is currently in closed beta. Due t
 
 Steps to follow:
 
+- download/clone this repo locally
+- create an API key in Airtable (see **Setup your credentials** section below)
 - Go to https://airtable.com/api
 - Click on the base you want to migrate
 - Open the DevTools (Chrome: https://developer.chrome.com/docs/devtools/open/ | Firefox: https://firefox-source-docs.mozilla.org/devtools-user/web_console/index.html)
@@ -30,7 +32,9 @@ Steps to follow:
 
 ### Setup your credentials
 
-To be able to migrate data between Airtable and Xata, the script needs to have the respective `apiKey`:
+Before migrating data from Airtable to Xata, the script needs to have the respective `apiKey`.
+
+You can find more information about creating API keys in each platfom in the respective documentation:
 
 - Airtable api key: https://support.airtable.com/docs/how-do-i-get-my-api-key
 - Xata api key: https://xata.io/docs/concepts/api-keys
@@ -44,9 +48,13 @@ AIRTABLE_API_KEY=key...
 
 ### Fine-tune your migration
 
-First step, you need to provide a `target.workspaceId`, you can find it in the workspace configuration tab. The workspace ID it part of the `Workspace API base URL` => `https://{workspaceId}.{regionId}.xata.sh/db/{database}`
+Fill in the required configuration fields in `src/index.ts`:
+- source.apiKey: your Airtable API key
+- target.workspaceID: you can find it in the workspace configuration tab. The workspace ID is part of the `Workspace API base URL` => `https://{workspaceId}.{regionId}.xata.sh/db/{database}`
+- target.regionId: the region where you would like your Xata database created
+- target.databaseName: the name of your database that will be created in Xata
 
-You can choose any `databaseName` and `databaseColor` that you want, the database must not exists! (the migrator will create the xata database for you).
+You can choose any `databaseName` and `databaseColor` that you want, but note that the database name must not exist already. The migrator will create the Xata database for you.
 
 ### Advanced
 
@@ -60,7 +68,8 @@ For further customization, please refer to `src/types.ts`.
 
 ### Run the script
 
-Now that everything is setup, it's time to run the script to import your data into Xata. Please not that nothing will affect your current data in Airtable (we are just reading) and since we are creating a new database in Xata, this will not affect your other databases! If something didn't go as planned (wrong data type, or a name that you dislike), you can easily delete the created database and re-run the script.
+Now that everything is setup, it's time to run the script to import your data into Xata. Please note that your current data in Airtable will not be affected by this migrator tool since it is read-only and as it strictly works by creating a new database in Xata, this will not affect your other databases! In case something didn't go as planned (incorrect data type, or a name that you dislike), you can easily delete the created database and re-run the script.  
+If you need help running this migration tool or have questions, you can contact support@xata.io
 
 ```sh
 $ npm start
@@ -68,6 +77,6 @@ $ npm start
 
 ### Enjoy your new Xatabase
 
-If everything went well, the script will print you the address of your new Xatabase.
+If everything went well, the script will print out the URL address of your new Xatabase.
 
-To learn more how to use it, please refer to our documentation https://xata.io/docs/getting-started
+To learn more about using Xata, please refer to our documentation https://xata.io/docs/getting-started
