@@ -5,7 +5,6 @@ if (!window.location.pathname.endsWith("/api/docs")) {
 var data = {
   source: {
     service: "airtable",
-    apiKey: "-- todo --",
   },
   target: {
     service: "xata",
