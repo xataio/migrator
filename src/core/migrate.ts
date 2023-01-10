@@ -1,5 +1,13 @@
 import dotenv from "dotenv";
-import { bufferCount, catchError, from, lastValueFrom, map, tap } from "rxjs";
+import {
+  bufferCount,
+  catchError,
+  concatMap,
+  from,
+  lastValueFrom,
+  map,
+  tap,
+} from "rxjs";
 import task, { TaskAPI } from "tasuku";
 
 import {
@@ -54,6 +62,12 @@ export async function migrate(migration: Migration) {
   const migrateRecordsOperations = new Map<string, Record<string, unknown>[]>();
   const resolveLinksOperations = new Map<string, Record<string, unknown>[]>();
   const subTasks: TaskAPI[] = [];
+  const hasLink =
+    Object.values(newTables).filter((table) =>
+      table.columns.reduce((mem, c) => {
+        return mem || c.type === "link";
+      }, false)
+    ).length > 0;
 
   await task(
     "Migrating date from Airtable to Xata",
@@ -149,18 +163,26 @@ export async function migrate(migration: Migration) {
               Array.from(migrateRecordsOperations.entries()).map(
                 ([tableName, records]) => {
                   return task(`Insert records into ${tableName}`, () =>
-                    bulkInsertTableRecords({
-                      apiKey: targetAPIKey,
-                      workspaceId: migration.target.workspaceId,
-                      regionId: migration.target.regionId,
-                      pathParams: {
-                        dbBranchName: migration.target.databaseName + ":main",
-                        tableName,
-                      },
-                      body: {
-                        records,
-                      },
-                    })
+                    lastValueFrom(
+                      from(records).pipe(
+                        bufferCount(1000),
+                        concatMap((r) =>
+                          bulkInsertTableRecords({
+                            apiKey: targetAPIKey,
+                            workspaceId: migration.target.workspaceId,
+                            regionId: migration.target.regionId,
+                            pathParams: {
+                              dbBranchName:
+                                migration.target.databaseName + ":main",
+                              tableName,
+                            },
+                            body: {
+                              records: r,
+                            },
+                          })
+                        )
+                      )
+                    )
                   );
                 }
               )
@@ -174,7 +196,7 @@ export async function migrate(migration: Migration) {
       }
 
       // Resolve all the links
-      if (!migration.skipResolveLinks) {
+      if (!migration.skipResolveLinks && hasLink) {
         subTasks.push(
           await task(
             "Resolve links between tables",
@@ -219,8 +241,8 @@ export async function migrate(migration: Migration) {
                     return task(`Resolve ${tableName} links`, () =>
                       lastValueFrom(
                         from(records).pipe(
-                          bufferCount(100),
-                          map((records) =>
+                          bufferCount(1000),
+                          concatMap((records) =>
                             bulkInsertTableRecords({
                               apiKey: targetAPIKey,
                               workspaceId: migration.target.workspaceId,
